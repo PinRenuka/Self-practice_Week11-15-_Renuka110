@@ -1,0 +1,46 @@
+Week13 
+ลองทำโจทย์จาก AI 
+function isBookingValid(bookingTime) {
+    const startBooking = new Date("2025-12-01T08:00:00");
+    const stopBooking = new Date("2025-12-01T18:00:00");
+
+    // ตรวจสอบว่า bookingTime อยู่ระหว่าง startBooking และ stopBooking
+    if (bookingTime >= startBooking && bookingTime <= stopBooking) {  // เปรียบเทียบเวลาที่เป็น millisecond ของ Date object
+         // แสดงเวลาในรูป ISO 8601 เช่น "2025-12-01T09:30:00.000Z"toISOString() แสดงเวลาแบบ UTC ช่วยให้ตรวจสอบเวลาแบบมาตรฐานไม่ขึ้นกับ timezone ของเครื่อง
+        console.log("ISO:", bookingTime.toISOString()); 
+        console.log(
+            "Locale (th-TH):",  // เวลาแบบ Thai locale
+            bookingTime.toLocaleString("th-TH", {
+                dateStyle: "full",  // แสดงวัน, เดือน, ปี แบบเต็ม
+                timeStyle: "long",  // แสดงเวลาแบบชั่วโมง:นาที:วินาที พร้อม timezone
+            })
+        );
+        return "Valid";  // ถ้าเวลาอยู่ในช่วง
+    } else {
+        return "Invalid";  // ถ้าเวลาไม่อยู่ในช่วง
+    }
+}
+
+console.log(isBookingValid(new Date("2025-12-01T09:30:00")));
+console.log(isBookingValid(new Date("2025-12-01T19:00:00")));
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// เอาไปใช้จริงกับ Project Integrated
+
+const data = await res.json();
+const d = new Date(data.updatedAt);
+let selectedTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const formatted = d.toLocaleString("en-GB", {  // วันที่แบบอังกฤษ (DD/MM/YYYY)
+    timeZone: selectedTimeZone,  // กำหนดการแสดงออกหน้าจอ
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+});
+span.textContent = `Declared ${data.planCode} - ${data.planNameEng} plan on ${formatted} (${selectedTimeZone})`;
+
+

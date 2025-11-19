@@ -1,0 +1,16 @@
+Week12 ได้ลองเขียน ฟังก์ชัน GET POST PUT DELETE ตามที่ได้เรียน 
+
+fetchUtils.js
+เก็บฟังก์ชัน API / getItems, addItem, editItem, deleteItem
+ทำงานกับ HTTP request: GET, POST, PUT, DELETE ผ่าน fetch
+
+noteManagement.js
+เชื่อม URL API (http://localhost:3000/notes) กับฟังก์ชันใน fetchUtils
+ส่งออกฟังก์ชัน loadNotes, addNote, editNote, deleteNote
+
+app.js
+เริ่มต้นแอปโดยโหลดโน้ตจาก API และสร้าง card แสดงผล
+สร้าง card ของโน้ตแบบ dynamic
+จัดการฟอร์มเมื่อกด Add/Edit
+จัดการปุ่ม Edit โดยใส่ข้อมูลโน้ตเดิมกลับเข้า form
+จัดการปุ่ม Delete พร้อมยืนยันและลบออกจากหน้าเว็บ + API
