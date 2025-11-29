@@ -1,0 +1,155 @@
+Week 15 จะเป็นส่วนของ Project Integrated
+
+เริ่มด้วยการสร้าง dialog 
+
+export function showErrorDialog(
+  message = "",        // เริ่มเว็ทค่าเริ่มต้นให้ยังไม่มี string อะไร
+  { okButton = false, onOk = null, allowEsc = false } = {},  // อันนี้เป็นการรับ parameter okButton ถ้า true จะสร้างปุ่ม OK ใน dialog onOk callback function ที่จะเรียกตอนกดปุ่ม OK allowEsc ถ้า true จะให้กด ESC เพื่อปิด dialog ได้
+  res = null   // ไว้ส่ง response object จาก backend
+) {
+  console.log("showErrorDialog");  // ไว้เช็คว่าเรียกฟังก์ชันนี้จริงไหม
+  // ลบ dialog เดิมออกก่อนเสมอ (กัน dialog ค้างจากรอบก่อน)
+   document.querySelectorAll(".ecors-dialog").forEach((d) => d.remove());
+  // เลือกข้อความตาม response
+  if (!message && res) {       // ถ้ามี message ใช้ข้อความนั้น ถ้าไม่มีแต่มี res เดาข้อความจาก status code ถ้าไม่มีอะไรเลย ใช้ข้อความ default
+    switch (res.status) {
+      case 201:
+        message = "Declaration successful";
+        break;
+      case 404:
+        message = "404 - not found";
+        break;
+      case 409:
+        message = "You may have declared study plan already. Please check again.";
+        break;
+      default:
+        message = "There is a problem. Please try again later.";
+    }
+  } else if (!message) {
+    message = "There is a problem. Please try again later.";
+  }
+
+  const dialog = document.createElement("dialog");  // สร้าง <dialog> element ใหม่
+  dialog.className = "ecors-dialog";  // ตั้วชื่อ class
+
+  const msg = document.createElement("p");  // สร้าง <p> ไว้ใส่ข้อความ
+  msg.className = "ecors-dialog-message";
+  msg.textContent = message;  // ใส่ข้อความ message ลงไปใน <p>
+  dialog.appendChild(msg);  //แล้วเอา <p> append เข้าไปใน dialog
+
+  // ปุ่ม OK
+  if (okButton) {  // เช็คก่อนว่า okButton เป็น true ไหม
+    const okBtn = document.createElement("button");  // ถ้าใช่สร้าง <button>
+    okBtn.className = "ecors-button-dialog";
+    okBtn.textContent = "OK";  // ตั้งข้อความปุ่ม OK"
+
+    okBtn.addEventListener("click", () => { // ตั้งค่า event click
+      // ปิดอย่างเดียว ไม่ remove ออกจาก DOM
+      dialog.close();
+      if (typeof onOk === "function") onOk();  ถ้า onOk เป็นฟังก์ชันเรียก onOk() ต่อ
+    });
+
+    dialog.appendChild(okBtn);
+  }
+  // Event "cancel" ของ <dialog> จะถูก trigger ตอนกด ESC
+  if (!allowEsc) {  // ถ้า allowEsc เป็น false ป้องกันไม่ให้ปิด
+    dialog.addEventListener("cancel", (e) => e.preventDefault());  // e.preventDefault() จะ block behavior ปิด dialog
+  }
+
+// ใส่ dialog ลงหน้าเว็บ และ show
+  document.body.appendChild(dialog);
+  dialog.showModal();  // แบบหน้าต่างบังข้างหลัง
+}
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+export function showConfirmCancelDialog(message, onConfirm) {
+  // ลบทุก dialog ที่ใช้ class .ecors-dialog ออกจาก DOM ก่อน
+  document.querySelectorAll(".ecors-dialog").forEach((d) => d.remove());
+
+  const dialog = document.createElement("dialog");  // สร้าง dialog และ ข้อความ
+  dialog.className = "ecors-dialog";
+
+  const msg = document.createElement("p");
+  msg.className = "ecors-dialog-message";
+  msg.textContent = message;
+  dialog.appendChild(msg);
+
+  // สร้างปุ่ม Cancel Declaration ยืนยันการยกเลิก
+  const cancelBtn = document.createElement("button");
+  cancelBtn.className = "ecors-button-cancel";
+  cancelBtn.textContent = "Cancel Declaration";
+
+  cancelBtn.addEventListener("click", () => {  // เพิ่ม Event เช็คว่า onConfirm เป็นฟังก์ชันไหม
+    if (typeof onConfirm === "function") onConfirm();
+  });
+  // สร้างปุ่ม Keep Declaration
+  const keepBtn = document.createElement("button");
+  keepBtn.className = "ecors-button-keep";
+  keepBtn.textContent = "Keep Declaration";
+
+  keepBtn.addEventListener("click", () => {  // คลิกแล้ว dialog.close(); ปิดกล่องยืนยันเฉยๆไม่ทำอย่างอื่น
+    dialog.close();
+  });
+
+// ลำดับปุ่มบนจอ
+  dialog.appendChild(cancelBtn);
+  dialog.appendChild(keepBtn);
+
+  // ปิดด้วย ESC ไม่ได้ 
+  dialog.addEventListener("cancel", (e) => e.preventDefault());
+
+  document.body.appendChild(dialog);
+  dialog.show();  // แค่เปิด dialog แต่ไม่ได้เป็น modal เต็มรูปแบบ
+}
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+async function populatePlans(selectEl, declaredData) {
+  try {
+    await keycloak.updateToken(30);
+    const token = keycloak.token;
+
+    const res = await fetch(`${config.API_BASE_URL}/v1/study-plans`, {  // ดึง list ของทุก study plan จาก BE
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+
+    const json = await res.json();
+    const list = json.data || json;
+
+    selectEl.innerHTML = "";   // สร้าง option
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "-- Select Major --";
+    placeholder.selected = true;
+    // placeholder.disabled = true;
+    selectEl.appendChild(placeholder);
+
+    list.forEach((item) => { 
+      const option = document.createElement("option");
+      option.className = "ecors-plan-row";
+      option.value = item.id;
+      option.textContent = `${item.planCode} - ${item.nameEng}`;
+      selectEl.appendChild(option);
+    });
+
+    if (declaredData && declaredData.planId != null) {
+      selectEl.value = String(declaredData.planId);
+    } else {
+      selectEl.value = "";
+    }
+  } catch (err) { // ในกรณีที่ error สร้าง option ใหม่
+    console.error("Failed to load majors:", err);
+
+    selectEl.innerHTML = "";
+    const errOpt = document.createElement("option");
+    errOpt.value = "";
+    errOpt.textContent = "Cannot load plans";
+    errOpt.selected = true;
+    errOpt.disabled = true;
+    selectEl.appendChild(errOpt);
+  }
+}
+
